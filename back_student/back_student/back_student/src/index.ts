@@ -1,8 +1,10 @@
 import * as bodyParser from 'body-parser';
 import * as cors from 'cors';
 import * as express from 'express';
+import * as fs from 'fs';
 import * as helmet from 'helmet';
 import * as morgan from 'morgan';
+import * as path from 'path';
 import 'reflect-metadata';
 import * as swaggerJSDoc from 'swagger-jsdoc';
 import * as swaggerStats from 'swagger-stats';
@@ -35,15 +37,22 @@ createConnection()
     app.use(swaggerStats.getMiddleware({}));
     app.use(helmet());
     app.use(bodyParser.json());
+
+    const logDir = process.env.LOG_DIR || '/var/log/app';
+    fs.mkdirSync(logDir, { recursive: true });
+    const logFile = fs.createWriteStream(path.join(logDir, 'access.log'), { flags: 'a' });
+    const logStream = { write: (msg: string) => { process.stdout.write(msg); logFile.write(msg); } };
+
     morgan.token('header-auth', (req: any) => {
       const token = req.headers.auth as string;
       return token ? token.substring(0, 20) + '...' : '-';
     });
-    app.use(morgan('[:date[web]] Started :method :url for :remote-addr'));
-    app.use(morgan('[:date[web]] Started with token :header-auth'));
+    app.use(morgan('[:date[web]] Started :method :url for :remote-addr', { stream: logStream }));
+    app.use(morgan('[:date[web]] Started with token :header-auth', { stream: logStream }));
     app.use(
       morgan(
         '[:date[iso]] Completed :status :res[content-length] in :response-time ms',
+        { stream: logStream },
       ),
     );
     // Set all routes from routes folder

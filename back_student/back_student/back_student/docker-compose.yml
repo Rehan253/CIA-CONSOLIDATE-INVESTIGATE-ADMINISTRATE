@@ -24,6 +24,8 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN}
     ports:
       - "3001:3001"
+    volumes:
+      - logs:/var/log/app
     networks:
       - backend
     depends_on:
@@ -34,3 +36,4 @@ networks:
     driver: bridge
 volumes:
   db_data:
+  logs:

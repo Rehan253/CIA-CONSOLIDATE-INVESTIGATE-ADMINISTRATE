@@ -8,7 +8,9 @@ COPY package.json yarn.lock ./
 RUN yarn install --ignore-scripts
 
 COPY . .
-RUN chown -R service-web:service-web /usr/src/app
+RUN chown -R service-web:service-web /usr/src/app && \
+    mkdir -p /var/log/app && \
+    chown service-web:service-web /var/log/app
 
 USER service-web
 
