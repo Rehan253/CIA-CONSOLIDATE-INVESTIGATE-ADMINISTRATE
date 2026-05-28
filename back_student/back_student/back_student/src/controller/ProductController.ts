@@ -5,12 +5,14 @@ import { Product } from '../entity/Product';
 
 class ProductController {
 
-  public static listAll = async (req: Request, res: Response) => {
+  // Returns the full list of products from the database
+  public static listAll = async (_req: Request, res: Response) => {
     const productRepository = getRepository(Product);
     const products = await productRepository.find();
     res.status(200).send(products);
   };
 
+  // Fetch a single product by its ID from the URL (e.g. /product/3)
   public static getOneById = async (req: Request, res: Response) => {
     const id: number = parseInt(req.params.id, 10);
     const productRepository = getRepository(Product);
@@ -22,6 +24,7 @@ class ProductController {
     }
   };
 
+  // Create a new product. The body must include at least name and category.
   public static newProduct = async (req: Request, res: Response) => {
     const { name, category, description, amount, price, hasExpiryDate } = req.body;
 
@@ -33,6 +36,7 @@ class ProductController {
     product.price = price || 0;
     product.hasExpiryDate = hasExpiryDate || false;
 
+    // Run the class-validator checks defined in the entity (e.g. @Length, @IsNotEmpty)
     const errors = await validate(product);
     if (errors.length > 0) {
       res.status(400).send(errors);
@@ -48,6 +52,7 @@ class ProductController {
     }
   };
 
+  // Update an existing product. We first check it exists, then overwrite the fields.
   public static editProduct = async (req: Request, res: Response) => {
     const id: number = parseInt(req.params.id, 10);
     const { name, category, description, amount, price, hasExpiryDate } = req.body;
@@ -78,6 +83,7 @@ class ProductController {
     res.status(200).send(product);
   };
 
+  // Delete a product by ID. Returns 404 if it doesn't exist.
   public static deleteProduct = async (req: Request, res: Response) => {
     const id: number = parseInt(req.params.id, 10);
     const productRepository = getRepository(Product);
