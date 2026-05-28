@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  # Stage 1 - build both Docker images
+  # This catches any Dockerfile errors or compile failures early
+
+  build-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend Docker image
+        run: docker build -t cia-backend ./back_student/back_student/back_student
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build frontend Docker image
+        run: docker build -t cia-frontend ./front_student/front_student
+
+  # Stage 2 - run checks and tests
+  # typecheck makes sure TypeScript doesn't have any type errors
+  # test-backend runs jest unit tests (passes even if no test files exist yet)
+  # build-check-frontend does a full React production build to catch any js/ts errors
+
+  typecheck-backend:
+    runs-on: ubuntu-latest
+    needs: [build-backend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - name: Install dependencies
+        working-directory: back_student/back_student/back_student
+        run: yarn install --ignore-scripts
+      - name: TypeScript type check
+        working-directory: back_student/back_student/back_student
+        run: yarn tsc --noEmit
+
+  test-backend:
+    runs-on: ubuntu-latest
+    needs: [build-backend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - name: Install dependencies
+        working-directory: back_student/back_student/back_student
+        run: yarn install --ignore-scripts
+      - name: Run tests
+        working-directory: back_student/back_student/back_student
+        run: yarn test --passWithNoTests
+
+  build-check-frontend:
+    runs-on: ubuntu-latest
+    needs: [build-frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - name: Install dependencies
+        working-directory: front_student/front_student
+        run: yarn install
+      - name: Build frontend
+        working-directory: front_student/front_student
+        run: yarn build
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider
