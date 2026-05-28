@@ -7,31 +7,11 @@ on:
     branches: ["**"]
 
 jobs:
-  # Stage 1 - build both Docker images
-  # This catches any Dockerfile errors or compile failures early
-
-  build-backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build backend Docker image
-        run: docker build -t cia-backend ./back_student/back_student/back_student
-
-  build-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build frontend Docker image
-        run: docker build -t cia-frontend ./front_student/front_student
-
-  # Stage 2 - run checks and tests
-  # typecheck makes sure TypeScript doesn't have any type errors
-  # test-backend runs jest unit tests (passes even if no test files exist yet)
-  # build-check-frontend does a full React production build to catch any js/ts errors
+  # Stage 1 - run all checks and tests first (parallel)
+  # Cheap checks fail fast before we spend time on Docker builds
 
   typecheck-backend:
     runs-on: ubuntu-latest
-    needs: [build-backend]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -46,7 +26,6 @@ jobs:
 
   test-backend:
     runs-on: ubuntu-latest
-    needs: [build-backend]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -61,7 +40,6 @@ jobs:
 
   build-check-frontend:
     runs-on: ubuntu-latest
-    needs: [build-frontend]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -75,3 +53,21 @@ jobs:
         run: yarn build
         env:
           NODE_OPTIONS: --openssl-legacy-provider
+
+  # Stage 2 - build Docker images only after all tests pass
+
+  build-backend:
+    runs-on: ubuntu-latest
+    needs: [typecheck-backend, test-backend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend Docker image
+        run: docker build -t cia-backend ./back_student/back_student/back_student
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    needs: [build-check-frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build frontend Docker image
+        run: docker build -t cia-frontend ./front_student/front_student
