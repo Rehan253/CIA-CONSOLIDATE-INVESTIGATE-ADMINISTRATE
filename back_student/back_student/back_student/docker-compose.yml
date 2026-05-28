@@ -1,33 +1,32 @@
-version: '3'
 services:
-  db: # the service hosting your MySQL instance
-    image: mysql:5.7 # the image and tag docker will pull from docker hub
+  db:
+    image: mysql:5.7
     container_name: dev_db
-    volumes: # this section allows you to configure persistence within multiple restarts
+    volumes:
       - db_data:/var/lib/mysql
-    restart: always # if the db crash somehow, restart it
-    environment: # env variables, you usually set this to override existing ones
-      MYSQL_ROOT_PASSWORD: root
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: dev_db
-      # MYSQL_USER: root
-      # MYSQL_PASSWORD: root
-    ports:
-      - "3306:3306"
     networks:
       - backend
 
   api:
     container_name: dev_api
-    image: sample-express-app
+    image: cia-backend
     build: .
     restart: always
     environment:
       DB_HOST: db
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN}
     ports:
-      - "3000:3000"
+      - "3001:3001"
     networks:
       - backend
-    depends_on: # set a dependency between your service and the database: this means that your application will not run if the db service is not running, but it doesn't assure you that the dabase will be ready to accept incoming connection (so your application could crash untill the db initializes itself)
+    depends_on:
       - db
 
 networks:

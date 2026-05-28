@@ -39,7 +39,7 @@ export class User {
   public updatedAt: Date;
 
   public hashPassword() {
-    this.password = hashSync(this.password, 8);
+    this.password = hashSync(this.password, 12);
   }
 
   public checkIfUnencryptedPasswordIsValid(unencryptedPassword: string) {

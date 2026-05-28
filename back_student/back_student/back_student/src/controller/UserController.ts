@@ -8,9 +8,8 @@ class UserController {
   public static listAll = async (req: Request, res: Response) => {
     // Get users from database
     const userRepository = getRepository(User);
-    const users = await userRepository.find();
+    const users = await userRepository.find({ select: ['id', 'username', 'role'] });
 
-    // Send the users object
     res.send(users);
   };
 

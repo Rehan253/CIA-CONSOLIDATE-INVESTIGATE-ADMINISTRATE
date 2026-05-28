@@ -41,6 +41,7 @@ class AuthController {
     const {username, password} = req.body;
     if (!(username && password)) {
       res.status(400).send('Body was empty');
+      return;
     }
     // Get user from database
     const userRepository = getRepository(User);
@@ -92,6 +93,7 @@ class AuthController {
     const {oldPassword, newPassword} = req.body;
     if (!(oldPassword && newPassword)) {
       res.status(400).send();
+      return;
     }
 
     // Get user from the database

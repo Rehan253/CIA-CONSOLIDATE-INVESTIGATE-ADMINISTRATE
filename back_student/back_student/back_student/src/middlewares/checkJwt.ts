@@ -6,7 +6,8 @@ export const checkJwt = (req: Request, res: Response, next: NextFunction) => {
   // Get the jwt token from the head
 
   if (req.headers.auth === undefined) {
-    res.status(400).send('No token provide');
+    res.status(401).send('No token provided');
+    return;
   }
 
   const token = req.headers.auth as string;

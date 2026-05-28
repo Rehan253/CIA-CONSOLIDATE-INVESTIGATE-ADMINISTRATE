@@ -40,7 +40,7 @@ export function login(email: string, password: string): any {
                 username: email,
                 password: password
             });
-            Cookies.set('token', response.data.token);
+            Cookies.set('token', response.data.token, { sameSite: 'strict' });
             return dispatch({type: LOG_IN, email: email});
         } catch (e) {
             if (e.response === undefined) {

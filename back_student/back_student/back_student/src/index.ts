@@ -31,15 +31,16 @@ createConnection()
 
     // Call midlewares
     const app = express();
-    app.use(cors());
+    app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:8080' }));
     app.use(swaggerStats.getMiddleware({}));
     app.use(helmet());
     app.use(bodyParser.json());
-    morgan.token('header-auth', (req, res) => req.headers.auth);
-    morgan.token('body', (req, res) => req.body.toString());
-    app.use(morgan('[:date[web]] Started :method :url for :remote-addr', true));
-    app.use(morgan('[:date[web]] Started with token :header-auth', true));
-    app.use(morgan('[:date[web]] Started with body :body', true));
+    morgan.token('header-auth', (req: any) => {
+      const token = req.headers.auth as string;
+      return token ? token.substring(0, 20) + '...' : '-';
+    });
+    app.use(morgan('[:date[web]] Started :method :url for :remote-addr'));
+    app.use(morgan('[:date[web]] Started with token :header-auth'));
     app.use(
       morgan(
         '[:date[iso]] Completed :status :res[content-length] in :response-time ms',

@@ -53,6 +53,19 @@ const LeftMenu: React.FC = () => {
                     </Link>
                 </li>
 
+                <hr className="sidebar-divider" />
+
+                <div className="sidebar-heading">
+                    Warehouse
+                </div>
+
+                <li className="nav-item">
+                    <Link className="nav-link" to="/products">
+                        <i className="fas fa-fw fa-warehouse"></i>
+                        <span>Products</span>
+                    </Link>
+                </li>
+
                 <hr className="sidebar-divider d-none d-md-block" />
             </ul>
         </Fragment>
@@ -60,26 +73,3 @@ const LeftMenu: React.FC = () => {
 };
 
 export default LeftMenu;
-
-
-/**
- *
- <hr className="sidebar-divider" />
- <div className="sidebar-heading">
- Warehouse
- </div>
-
- <hr className="sidebar-divider" />
- * <li className="nav-item">
-    <Link className="nav-link" to={`/products`}>
-        <i className="fas fa-fw fa-warehouse"></i>
-        <span>Products</span>
-    </Link>
-</li>
-
-<li className="nav-item">
-    <Link className="nav-link" to={`/orders`}>
-<i className="fas fa-fw fa-dollar-sign"></i>
-    <span>Orders</span>
-    </Link>
-    </li>**/

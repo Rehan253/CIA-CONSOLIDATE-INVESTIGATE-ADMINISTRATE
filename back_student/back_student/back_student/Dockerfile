@@ -1,14 +1,16 @@
-FROM node:11-alpine
+FROM node:18-alpine
 
-RUN mkdir -p /usr/src/app
+RUN addgroup -S service-web && adduser -S -s /sbin/nologin -G service-web service-web
 
 WORKDIR /usr/src/app
 
+COPY package.json yarn.lock ./
+RUN yarn install --ignore-scripts
+
 COPY . .
+RUN chown -R service-web:service-web /usr/src/app
 
-RUN yarn install
+USER service-web
 
-
-EXPOSE 3000
-CMD ["yarn", "migration:start"]
+EXPOSE 3001
 CMD ["yarn", "start"]

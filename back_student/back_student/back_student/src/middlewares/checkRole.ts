@@ -15,6 +15,7 @@ export const checkRole = (roles: string[]) => {
       user = await userRepository.findOneOrFail(id);
     } catch (id) {
       res.status(401).send();
+      return;
     }
 
     // Check if array of authorized roles includes the user's role
