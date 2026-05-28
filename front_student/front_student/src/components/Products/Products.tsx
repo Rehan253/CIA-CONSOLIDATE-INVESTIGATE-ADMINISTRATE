@@ -7,9 +7,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { updateCurrentPath } from "../../store/actions/root.actions";
 import { IProductState, IStateType, IRootPageStateType } from "../../store/models/root.interface";
 import Popup from "reactjs-popup";
-import { removeProduct, clearSelectedProduct, setModificationState,
-  changeSelectedProduct } from "../../store/actions/products.action";
-import { addNotification } from "../../store/actions/notifications.action";
+import { clearSelectedProduct, setModificationState, changeSelectedProduct,
+  loadProducts, deleteProductFromApi } from "../../store/actions/products.action";
 import { ProductModificationStatus, IProduct } from "../../store/models/product.interface";
 
 const Products: React.FC = () => {
@@ -24,6 +23,8 @@ const Products: React.FC = () => {
   useEffect(() => {
     dispatch(clearSelectedProduct());
     dispatch(updateCurrentPath("products", "list"));
+    // Load products from the backend whenever this page is opened
+    dispatch(loadProducts());
   }, [path.area, dispatch]);
 
   function onProductSelect(product: IProduct): void {
@@ -32,7 +33,7 @@ const Products: React.FC = () => {
   }
 
   function onProductRemove() {
-    if(products.selectedProduct) {
+    if (products.selectedProduct) {
       setPopup(true);
     }
   }
@@ -67,9 +68,7 @@ const Products: React.FC = () => {
               </div>
             </div>
             <div className="card-body">
-              <ProductList
-                onSelect={onProductSelect}
-              />
+              <ProductList onSelect={onProductSelect} />
             </div>
           </div>
         </div>
@@ -77,7 +76,6 @@ const Products: React.FC = () => {
           || (products.modificationState === ProductModificationStatus.Edit && products.selectedProduct)) ?
           <ProductForm /> : null}
       </div>
-
 
       <Popup
         className="popup-modal"
@@ -96,16 +94,16 @@ const Products: React.FC = () => {
                 if (!products.selectedProduct) {
                   return;
                 }
-                dispatch(addNotification("Product removed", `Product ${products.selectedProduct.name} was removed`));
-                dispatch(removeProduct(products.selectedProduct.id));
+                // Delete from the database, not just from local state
+                dispatch(deleteProductFromApi(products.selectedProduct.id));
                 dispatch(clearSelectedProduct());
                 setPopup(false);
               }}>Remove
-              </button>
+            </button>
           </div>
         </div>
       </Popup>
-    </Fragment >
+    </Fragment>
   );
 };
 
