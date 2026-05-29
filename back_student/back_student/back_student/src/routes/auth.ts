@@ -10,5 +10,7 @@ router.post('/login', [validateEmpty], AuthController.login);
 router.post('/register', [validateEmpty], AuthController.register);
 router.get('/me', [checkJwt], AuthController.getMe);
 router.post('/change-password', [checkJwt], AuthController.changePassword);
+router.post('/refresh', AuthController.refresh);
+router.post('/logout', AuthController.logout);
 
 export default router;

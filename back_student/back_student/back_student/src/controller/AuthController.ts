@@ -1,27 +1,46 @@
+import * as crypto from 'crypto';
 import {validate} from 'class-validator';
 import {Request, Response} from 'express';
 import * as jwt from 'jsonwebtoken';
 import {getRepository} from 'typeorm';
 import config from '../config/config';
 import {User} from '../entity/User';
+import {RefreshToken} from '../entity/RefreshToken';
 
 class AuthController {
 
   public static register = async (req: Request, res: Response) => {
     const {username, password} = req.body;
+
+    // username/email: must be present and between 4-100 characters
+    if (!username || username.length < 4 || username.length > 100) {
+      res.status(400).send('username must be at least 4 characters');
+      return;
+    }
+
+    // password: min 8 chars, at least one uppercase, one lowercase, one number
+    if (!password || password.length < 8) {
+      res.status(400).send('password must be at least 8 characters');
+      return;
+    }
+    if (!/(?=.*[a-z])/.test(password)) {
+      res.status(400).send('password must contain at least one lowercase letter');
+      return;
+    }
+    if (!/(?=.*[A-Z])/.test(password)) {
+      res.status(400).send('password must contain at least one uppercase letter');
+      return;
+    }
+    if (!/(?=.*\d)/.test(password)) {
+      res.status(400).send('password must contain at least one number');
+      return;
+    }
+
     const user = new User();
     user.username = username;
     user.password = password;
     user.role = "NORMAL";
 
-    // Validade if the parameters are ok
-    const errors = await validate(user);
-    if (errors.length > 0) {
-      res.status(400).send(errors);
-      return;
-    }
-
-    // Hash the password, to securely store on DB
     user.hashPassword();
 
     // Try to save. If fails, the username is already in use
@@ -60,17 +79,82 @@ class AuthController {
       return;
     }
 
-    // Sing JWT, valid for 1 hour
-    const token = jwt.sign(
+    // access token is short lived — 15 minutes
+    const accessToken = jwt.sign(
       {userId: user.id, username: user.username},
       config.jwtSecret,
-      {expiresIn: '1h'},
+      {expiresIn: '15m'},
     );
-    res.send({token});
+
+    // refresh token is a random string stored in the database — valid for 7 days
+    const refreshTokenValue = crypto.randomBytes(40).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    const refreshTokenRepo = getRepository(RefreshToken);
+    const refreshToken = new RefreshToken();
+    refreshToken.token = refreshTokenValue;
+    refreshToken.userId = user.id;
+    refreshToken.expiresAt = expiresAt;
+    await refreshTokenRepo.save(refreshToken);
+
+    res.send({ token: accessToken, accessToken, refreshToken: refreshTokenValue });
   };
 
-  public static getMe = async (req: Request, res: Response) => {
-    // Get user from database
+  public static refresh = async (req: Request, res: Response) => {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      res.status(400).send('Refresh token required');
+      return;
+    }
+
+    const refreshTokenRepo = getRepository(RefreshToken);
+    let storedToken: RefreshToken;
+    try {
+      storedToken = await refreshTokenRepo.findOneOrFail({ where: { token: refreshToken } });
+    } catch (e) {
+      res.status(401).send('Invalid refresh token');
+      return;
+    }
+
+    if (storedToken.expiresAt < new Date()) {
+      await refreshTokenRepo.delete(storedToken.id);
+      res.status(401).send('Refresh token expired, please login again');
+      return;
+    }
+
+    const userRepository = getRepository(User);
+    let user: User;
+    try {
+      user = await userRepository.findOneOrFail(storedToken.userId);
+    } catch (e) {
+      res.status(401).send('User not found');
+      return;
+    }
+
+    const accessToken = jwt.sign(
+      {userId: user.id, username: user.username},
+      config.jwtSecret,
+      {expiresIn: '15m'},
+    );
+
+    res.send({ accessToken });
+  };
+
+  public static logout = async (req: Request, res: Response) => {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      res.status(400).send('Refresh token required');
+      return;
+    }
+
+    const refreshTokenRepo = getRepository(RefreshToken);
+    await refreshTokenRepo.delete({ token: refreshToken });
+
+    res.status(204).send();
+  };
+
+  public static getMe = async (_req: Request, res: Response) => {
     const userRepository = getRepository(User);
     let user: User;
     try {

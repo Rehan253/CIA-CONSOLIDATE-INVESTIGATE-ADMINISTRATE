@@ -66,8 +66,7 @@ export function register(email: string, password: string): any {
             if (e.response === undefined) {
                 return dispatch(addNotification("Error", e.message));
             }
-            console.log(e.response.data);
-            if (e.response.data.length !== undefined) {
+            if (Array.isArray(e.response.data)) {
                 return dispatch(addNotification("Error", e.response.data[0].constraints.length));
             }
             return dispatch(addNotification("Error", e.response.data));
